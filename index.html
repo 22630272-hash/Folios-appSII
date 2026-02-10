@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor de Referencias</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --secondary: #7209b7;
+            --success: #4cc9f0;
+            --danger: #f72585;
+            --warning: #f8961e;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --gray-light: #e9ecef;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--dark);
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            min-height: 90vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            background: var(--light);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h2 {
+            color: var(--primary);
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 10px;
+        }
+
+        h3 {
+            color: var(--secondary);
+            margin: 15px 0;
+            font-size: 1.3rem;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        input, select {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid var(--gray-light);
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s;
+            background: white;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.2);
+        }
+
+        .btn-secondary {
+            background: var(--gray);
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-success {
+            background: var(--success);
+        }
+
+        .btn-success:hover {
+            background: #3db5d8;
+        }
+
+        .btn-logout {
+            background: transparent;
+            color: var(--danger);
+            border: 2px solid var(--danger);
+            width: auto;
+            padding: 8px 20px;
+            margin-left: 10px;
+        }
+
+        .btn-logout:hover {
+            background: var(--danger);
+            color: white;
+        }
+
+        .user-info {
+            background: white;
+            border: 2px solid var(--gray-light);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .user-info-content {
+            flex-grow: 1;
+        }
+
+        .user-info h3 {
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+
+        .dept-badge {
+            display: inline-block;
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .dept-G { background: #4361ee; color: white; }
+        .dept-F { background: #7209b7; color: white; }
+        .dept-B { background: #f8961e; color: white; }
+        .dept-DO { background: #f72585; color: white; }
+        .dept-QA { background: #4cc9f0; color: white; }
+        .dept-DB { background: #2a9d8f; color: white; }
+
+        .reference-display {
+            background: white;
+            border: 3px dashed var(--primary);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 25px 0;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--dark);
+            word-break: break-all;
+        }
+
+        .actions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .action-btn {
+            background: white;
+            border: 2px solid var(--gray-light);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .action-btn:hover {
+            border-color: var(--primary);
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .action-btn.active {
+            border-color: var(--primary);
+            background: rgba(67, 97, 238, 0.1);
+            color: var(--primary);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: var(--gray);
+        }
+
+        .error {
+            background: #fee;
+            border-left: 4px solid var(--danger);
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 8px;
+            color: var(--danger);
+            display: none;
+        }
+
+        .success {
+            background: #eff8ff;
+            border-left: 4px solid var(--success);
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 8px;
+            color: var(--success);
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 15px;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .actions-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .user-info {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .btn-logout {
+                margin-left: 0;
+                margin-top: 10px;
+                width: 100%;
+            }
+        }
+
+        .reference-inputs {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .folio-display {
+            font-size: 1.2rem;
+            padding: 15px;
+            background: var(--gray-light);
+            border-radius: 10px;
+            text-align: center;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .login-form {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📋 Gestor de Referencias</h1>
+            <p>Sistema de gestión de tareas y seguimiento</p>
+        </div>
+        
+        <div class="content">
+            <!-- Sección de Login -->
+            <div id="login-section" class="section active">
+                <h2>Iniciar Sesión</h2>
+                <div class="login-form">
+                    <div class="form-group">
+                        <label for="email">Correo electrónico</label>
+                        <input type="email" id="email" placeholder="tu@empresa.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Contraseña</label>
+                        <input type="password" id="password" placeholder="••••••••">
+                    </div>
+                    <button class="btn" onclick="login()">Iniciar Sesión</button>
+                    <div class="error" id="login-error">
+                        Error: Credenciales incorrectas
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sección Principal -->
+            <div id="main-section" class="section">
+                <div class="user-info">
+                    <div class="user-info-content">
+                        <h3 id="current-user">Usuario</h3>
+                        <div class="dept-badge" id="current-dept">Departamento</div>
+                    </div>
+                    <button class="btn btn-logout" onclick="logout()">Cerrar Sesión</button>
+                </div>
+                
+                <h2>Selecciona el tipo de acción</h2>
+                <div class="actions-grid" id="actions-grid">
+                    <!-- Acciones cargadas dinámicamente según departamento -->
+                </div>
+                
+                <div id="form-section" style="display: none;">
+                    <h2 id="form-title">Completa la información</h2>
+                    
+                    <div class="reference-inputs" id="reference-inputs">
+                        <!-- Campos específicos según acción -->
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="title">Título</label>
+                        <input type="text" id="title" placeholder="Ingresa el título..." autocomplete="off">
+                    </div>
+                    
+                    <div class="folio-display" id="folio-display">
+                        Folio generado aparecerá aquí
+                    </div>
+                    
+                    <button class="btn btn-success" id="copy-btn" disabled onclick="copyToClipboard()">
+                        📋 Copiar Referencia
+                    </button>
+                    
+                    <button class="btn btn-secondary" onclick="resetForm()">
+                        🔄 Nueva Referencia
+                    </button>
+                </div>
+                
+                <div class="error" id="form-error"></div>
+                <div class="success" id="success-message">
+                    ¡Referencia copiada al portapapeles y guardada!
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuración de Supabase
+        const configSupabase = {
+            urlBase: 'https://hjqpciveaiebdxdjewvx.supabase.co',
+            llavePublica: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqcXBjaXZlYWllYmR4ZGpld3Z4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA2Nzc5NTQsImV4cCI6MjA4NjI1Mzk1NH0.OxwKF3J1H_4FT1R64VVkPTWgsYkaEFUpz4IqXiEZGU4'
+        };
+
+        // Estado de la aplicación
+        let currentUser = null;
+        let currentAction = null;
+        let currentDept = null;
+        let supabaseApiKey = configSupabase.llavePublica;
+        let supabaseUrl = configSupabase.urlBase;
+
+        //Variables globales
+        let currentFolio = '';
+        let currentReference = '';
+
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
+            checkSession();
+            
+            // Escuchar cambios en el título
+            document.getElementById('title').addEventListener('input', function() {
+                updateFolio();
+            });
+        });
+
+        function checkSession() {
+            const savedUser = localStorage.getItem('currentUser');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                showMainSection();
+            }
+        }
+
+        async function login() {
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value.trim();
+            
+            if (!email || !password) {
+                showError('login-error', 'Por favor, ingresa correo y contraseña');
+                return;
+            }
+            
+            try {
+                // Consultar usuario en Supabase
+                const response = await fetch(`${supabaseUrl}/rest/v1/usuarios?correo=eq.${encodeURIComponent(email)}&select=*`, {
+                    headers: {
+                        'apikey': supabaseApiKey,
+                        'Authorization': `Bearer ${supabaseApiKey}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Error al conectar con la base de datos');
+                }
+                
+                const users = await response.json();
+                
+                if (users.length === 0) {
+                    showError('login-error', 'Usuario no encontrado');
+                    return;
+                }
+                
+                const user = users[0];
+                
+                // Verificar contraseña (en texto plano según tu estructura)
+                if (user.contraseña !== password) {
+                    showError('login-error', 'Contraseña incorrecta');
+                    return;
+                }
+                
+                // Login exitoso
+                currentUser = user;
+                currentDept = user.departamento;
+                localStorage.setItem('currentUser', JSON.stringify(user));
+                showMainSection();
+                
+            } catch (error) {
+                console.error('Error en login:', error);
+                showError('login-error', 'Error al iniciar sesión. Intenta de nuevo.');
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('currentUser');
+            currentUser = null;
+            document.getElementById('login-section').classList.add('active');
+            document.getElementById('main-section').classList.remove('active');
+            document.getElementById('email').value = '';
+            document.getElementById('password').value = '';
+        }
+
+        function showMainSection() {
+            document.getElementById('current-user').textContent = currentUser.nombre;
+            document.getElementById('current-dept').textContent = getDeptName(currentUser.departamento);
+            document.getElementById('current-dept').className = `dept-badge dept-${currentUser.departamento}`;
+            
+            loadActions();
+            
+            document.getElementById('login-section').classList.remove('active');
+            document.getElementById('main-section').classList.add('active');
+        }
+
+        function getDeptName(code) {
+            const names = {
+                'G': 'Gestión',
+                'F': 'Frontend',
+                'B': 'Backend',
+                'DO': 'DevOps',
+                'QA': 'QA',
+                'DB': 'Base de Datos'
+            };
+            return names[code] || code;
+        }
+
+        function loadActions() {
+            const actionsGrid = document.getElementById('actions-grid');
+            actionsGrid.innerHTML = '';
+            
+            // Definir acciones disponibles por departamento
+            let actions = [];
+            
+            if (currentDept === 'G') {
+                actions = [
+                    { id: 'tarea', name: 'Tarea', default: false, icon: '✅' },
+                    { id: 'hu', name: 'Historia de Usuario', default: true, icon: '📋' },
+                    { id: 'error', name: 'Error', default: false, icon: '🐛' },
+                    { id: 'solicitud', name: 'Solicitud', default: false, icon: '📨' }
+                ];
+            } else {
+                actions = [
+                    { id: 'tarea', name: 'Tarea', default: true, icon: '✅' },
+                    { id: 'error', name: 'Error', default: false, icon: '🐛' },
+                    { id: 'solicitud', name: 'Solicitud', default: false, icon: '📨' }
+                ];
+            }
+            
+            actions.forEach(action => {
+                const btn = document.createElement('div');
+                btn.className = 'action-btn';
+                if (action.default) {
+                    btn.classList.add('active');
+                    selectAction(action.id);
+                }
+                btn.onclick = () => {
+                    document.querySelectorAll('.action-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    selectAction(action.id);
+                };
+                
+                btn.innerHTML = `
+                    <div style="font-size: 2rem; margin-bottom: 10px;">${action.icon}</div>
+                    <div>${action.name}</div>
+                `;
+                
+                actionsGrid.appendChild(btn);
+            });
+        }
+
+        function selectAction(actionId) {
+            currentAction = actionId;
+            document.getElementById('form-title').textContent = `Nueva ${getActionName(actionId)}`;
+            document.getElementById('form-section').style.display = 'block';
+            
+            loadReferenceInputs();
+            updateFolio();
+        }
+
+        function getActionName(actionId) {
+            const names = {
+                'tarea': 'Tarea',
+                'hu': 'Historia de Usuario',
+                'error': 'Error',
+                'solicitud': 'Solicitud'
+            };
+            return names[actionId] || actionId;
+        }
+
+        function loadReferenceInputs() {
+            const container = document.getElementById('reference-inputs');
+            container.innerHTML = '';
+            
+            if (currentAction === 'hu' && currentDept === 'G') {
+                // Para HU de Gestión
+                container.innerHTML = `
+                    <div class="form-group">
+                        <label for="parte">Parte del Sistema</label>
+                        <input type="number" id="parte" value="1" min="1" onchange="updateFolio()">
+                    </div>
+                    <div class="form-group">
+                        <label for="subparte">Subparte</label>
+                        <input type="number" id="subparte" value="1" min="1" onchange="updateFolio()">
+                    </div>
+                `;
+            } else if (currentAction === 'tarea') {
+                // Para tareas (necesita referencia a HU)
+                container.innerHTML = `
+                    <div class="form-group">
+                        <label for="referencia">Referencia a HU (ej: GHU-1.1.1)</label>
+                        <input type="text" id="referencia" placeholder="Ej: GHU-1.1.1" onchange="updateFolio()">
+                    </div>
+                `;
+            } else if (currentAction === 'error' || currentAction === 'solicitud') {
+                // Para errores y solicitudes (referencia a tarea)
+                container.innerHTML = `
+                    <div class="form-group">
+                        <label for="referencia">Referencia a Tarea (ej: GT-001)</label>
+                        <input type="text" id="referencia" placeholder="Ej: GT-001" onchange="updateFolio()">
+                    </div>
+                `;
+            }
+        }
+
+        async function getLastConsecutive() {
+            try {
+                let endpoint = '';
+                
+                if (currentAction === 'hu' && currentDept === 'G') {
+                    const parte = parseInt(document.getElementById('parte').value) || 1;
+                    const subparte = parseInt(document.getElementById('subparte').value) || 1;
+                    
+                    // Buscar en historias de usuario
+                    const response = await fetch(
+                        `${supabaseUrl}/rest/v1/historias_usuario?parte=eq.${parte}&subparte=eq.${subparte}&select=consecutivo&order=consecutivo.desc&limit=1`,
+                        {
+                            headers: {
+                                'apikey': supabaseApiKey,
+                                'Authorization': `Bearer ${supabaseApiKey}`
+                            }
+                        }
+                    );
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        return data.length > 0 ? data[0].consecutivo : 0;
+                    }
+                    
+                } else {
+                    const actionCodes = {
+                        'tarea': 'T',
+                        'error': 'ERR',
+                        'solicitud': 'S'
+                    };
+                    const actionCode = actionCodes[currentAction];
+                    
+                    // Buscar en actividades generales
+                    const response = await fetch(
+                        `${supabaseUrl}/rest/v1/actividades?departamento=eq.${currentDept}&tipo_actividad=eq.${currentAction}&select=folio&order=folio.desc&limit=1`,
+                        {
+                            headers: {
+                                'apikey': supabaseApiKey,
+                                'Authorization': `Bearer ${supabaseApiKey}`
+                            }
+                        }
+                    );
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.length > 0) {
+                            const lastFolio = data[0].folio;
+                            const match = lastFolio.match(/\d+/);
+                            return match ? parseInt(match[0]) : 0;
+                        }
+                    }
+                }
+                
+                return 0;
+            } catch (error) {
+                console.error('Error al obtener consecutivo:', error);
+                return 0;
+            }
+        }
+
+        async function updateFolio() {
+            const title = document.getElementById('title').value.trim();
+            const copyBtn = document.getElementById('copy-btn');
+            
+            // Reiniciar valores
+            currentFolio = '';
+            currentReference = '';
+            
+            if (!title) {
+                document.getElementById('folio-display').textContent = 'Ingresa un título para generar el folio';
+                copyBtn.disabled = true;
+                return;
+            }
+            
+            // Obtener el último consecutivo
+            const lastConsecutive = await getLastConsecutive();
+            const consecutivo = lastConsecutive + 1;
+            
+            if (currentAction === 'hu' && currentDept === 'G') {
+                const parte = parseInt(document.getElementById('parte').value) || 1;
+                const subparte = parseInt(document.getElementById('subparte').value) || 1;
+                currentFolio = `GHU-${parte}.${subparte}.${consecutivo}`;
+                currentReference = ''; // HU no tiene referencia
+                
+                document.getElementById('folio-display').textContent = `${currentFolio} ${title}`;
+                
+            } else {
+                const actionCodes = {
+                    'tarea': 'T',
+                    'error': 'ERR',
+                    'solicitud': 'S'
+                };
+                
+                const deptCode = currentDept;
+                const actionCode = actionCodes[currentAction];
+                currentFolio = `${deptCode}${actionCode}-${consecutivo.toString().padStart(3, '0')}`;
+                
+                // Obtener y validar referencia
+                const referenciaInput = document.getElementById('referencia');
+                if (referenciaInput) {
+                    currentReference = referenciaInput.value.trim();
+                    
+                    // Validar referencias si es necesario
+                    if (currentAction === 'tarea') {
+                        if (!currentReference || !currentReference.startsWith('GHU-')) {
+                            document.getElementById('folio-display').textContent = 'Error: La referencia debe ser una HU válida (ej: GHU-1.1.1)';
+                            copyBtn.disabled = true;
+                            return;
+                        }
+                    } else if (currentAction === 'error' || currentAction === 'solicitud') {
+                        if (!currentReference) {
+                            document.getElementById('folio-display').textContent = 'Error: Debes ingresar una referencia a tarea';
+                            copyBtn.disabled = true;
+                            return;
+                        }
+                    }
+                    
+                    document.getElementById('folio-display').textContent = `${currentReference} ${currentFolio} ${title}`;
+                }
+            }
+            
+            copyBtn.disabled = false;
+        }
+
+        async function copyToClipboard() {
+            const folioText = document.getElementById('folio-display').textContent;
+            
+            try {
+                await navigator.clipboard.writeText(folioText);
+                await saveToDatabase();
+                showSuccess();
+            } catch (err) {
+                // Fallback para navegadores antiguos
+                const textArea = document.createElement('textarea');
+                textArea.value = folioText;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                await saveToDatabase();
+                showSuccess();
+            }
+        }
+
+        async function saveToDatabase() {
+            try {
+                const title = document.getElementById('title').value.trim();
+                const folioText = document.getElementById('folio-display').textContent;
+                const [,,, consecutivo] = currentFolio.split(/[-.]/);
+                
+                if (currentAction === 'hu' && currentDept === 'G') {
+                    const parte = parseInt(document.getElementById('parte').value) || 1;
+                    const subparte = parseInt(document.getElementById('subparte').value) || 1;
+                    
+                    // Guardar en historias_usuario
+                    const response = await fetch(`${supabaseUrl}/rest/v1/historias_usuario`, {
+                        method: 'POST',
+                        headers: {
+                            'apikey': supabaseApiKey,
+                            'Authorization': `Bearer ${supabaseApiKey}`,
+                            'Content-Type': 'application/json',
+                            'Prefer': 'return=representation'
+                        },
+                        body: JSON.stringify({
+                            parte: parte,
+                            subparte: subparte,
+                            consecutivo: parseInt(consecutivo),
+                            titulo: title.trim(),
+                            folio: currentFolio,
+                            usuario_id: currentUser.id,
+                            creado_en: new Date().toISOString()
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('Error al guardar en la base de datos');
+                    }
+                    
+                } else {
+                    // Guardar en actividades
+                    const response = await fetch(`${supabaseUrl}/rest/v1/actividades`, {
+                        method: 'POST',
+                        headers: {
+                            'apikey': supabaseApiKey,
+                            'Authorization': `Bearer ${supabaseApiKey}`,
+                            'Content-Type': 'application/json',
+                            'Prefer': 'return=representation'
+                        },
+                        body: JSON.stringify({
+                            departamento: currentDept,
+                            tipo_actividad: currentAction,
+                            folio: currentFolio,
+                            referencia: currentReference,
+                            titulo: title.trim(),
+                            usuario_id: currentUser.id,
+                            creado_en: new Date().toISOString()
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('Error al guardar en la base de datos');
+                    }
+                }
+            } catch (error) {
+                console.error('Error al guardar:', error);
+                showError('form-error', 'Error al guardar en la base de datos');
+            }
+        }
+
+        function showSuccess() {
+            const successEl = document.getElementById('success-message');
+            successEl.style.display = 'block';
+            setTimeout(() => {
+                successEl.style.display = 'none';
+            }, 3000);
+        }
+
+        function showError(id, message) {
+            const errorEl = document.getElementById(id);
+            errorEl.textContent = message;
+            errorEl.style.display = 'block';
+            setTimeout(() => {
+                errorEl.style.display = 'none';
+            }, 3000);
+        }
+
+        function resetForm() {
+            document.getElementById('title').value = '';
+            document.getElementById('form-error').style.display = 'none';
+            document.getElementById('success-message').style.display = 'none';
+            document.getElementById('copy-btn').disabled = true;
+            
+            // Reiniciar variables globales
+            currentFolio = '';
+            currentReference = '';
+            
+            // Resetear valores específicos
+            if (currentAction === 'hu' && currentDept === 'G') {
+                document.getElementById('parte').value = '1';
+                document.getElementById('subparte').value = '1';
+            } else {
+                const referenciaInput = document.getElementById('referencia');
+                if (referenciaInput) referenciaInput.value = '';
+            }
+            
+            document.getElementById('folio-display').textContent = 'Folio generado aparecerá aquí';
+        }
+    </script>
+</body>
+</html>
