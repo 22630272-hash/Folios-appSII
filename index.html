@@ -359,7 +359,7 @@
                     </div>
                     <div class="form-group">
                         <label for="password">Contraseña</label>
-                        <input type="password" id="password" placeholder="••••••••">
+                        <input type="password" id="password" placeholder="Ingresa tu contraseña">
                     </div>
                     <button class="btn" onclick="login()">Iniciar Sesión</button>
                     <div class="error" id="login-error">
@@ -545,7 +545,7 @@
             if (currentDept === 'G') {
                 actions = [
                     { id: 'tarea', name: 'Tarea', default: false, icon: '✅' },
-                    { id: 'hu', name: 'Historia de Usuario', default: true, icon: '📋' },
+                    { id: 're', name: 'Requerimiento', default: true, icon: '📋' },
                     { id: 'error', name: 'Error', default: false, icon: '🐛' },
                     { id: 'solicitud', name: 'Solicitud', default: false, icon: '📨' }
                 ];
@@ -581,7 +581,11 @@
 
         function selectAction(actionId) {
             currentAction = actionId;
+            if (currentAction === 're') {
+                document.getElementById('form-title').textContent = `Nuevo ${getActionName(actionId)}`;
+            } else {
             document.getElementById('form-title').textContent = `Nueva ${getActionName(actionId)}`;
+            }
             document.getElementById('form-section').style.display = 'block';
             
             loadReferenceInputs();
@@ -591,7 +595,7 @@
         function getActionName(actionId) {
             const names = {
                 'tarea': 'Tarea',
-                'hu': 'Historia de Usuario',
+                're': 'Requerimiento',
                 'error': 'Error',
                 'solicitud': 'Solicitud'
             };
@@ -602,7 +606,7 @@
             const container = document.getElementById('reference-inputs');
             container.innerHTML = '';
             
-            if (currentAction === 'hu' && currentDept === 'G') {
+            if (currentAction === 're' && currentDept === 'G') {
                 // Para HU de Gestión
                 container.innerHTML = `
                     <div class="form-group">
@@ -618,8 +622,8 @@
                 // Para tareas (necesita referencia a HU)
                 container.innerHTML = `
                     <div class="form-group">
-                        <label for="referencia">Referencia a HU (ej: GHU-1.1.1)</label>
-                        <input type="text" id="referencia" placeholder="Ej: GHU-1.1.1" onchange="updateFolio()">
+                        <label for="referencia">Referencia al folio del requerimiento (ej: RE-1.1.1)</label>
+                        <input type="text" id="referencia" placeholder="Ej: RE-1.1.1" onchange="updateFolio()">
                     </div>
                 `;
             } else if (currentAction === 'error' || currentAction === 'solicitud') {
@@ -637,7 +641,7 @@
             try {
                 let endpoint = '';
                 
-                if (currentAction === 'hu' && currentDept === 'G') {
+                if (currentAction === 're' && currentDept === 'G') {
                     const parte = parseInt(document.getElementById('parte').value) || 1;
                     const subparte = parseInt(document.getElementById('subparte').value) || 1;
                     
@@ -711,10 +715,10 @@
             const lastConsecutive = await getLastConsecutive();
             const consecutivo = lastConsecutive + 1;
             
-            if (currentAction === 'hu' && currentDept === 'G') {
+            if (currentAction === 're' && currentDept === 'G') {
                 const parte = parseInt(document.getElementById('parte').value) || 1;
                 const subparte = parseInt(document.getElementById('subparte').value) || 1;
-                currentFolio = `GHU-${parte}.${subparte}.${consecutivo}`;
+                currentFolio = `RE-${parte}.${subparte}.${consecutivo}`;
                 currentReference = ''; // HU no tiene referencia
                 
                 document.getElementById('folio-display').textContent = `${currentFolio} ${title}`;
@@ -737,8 +741,8 @@
                     
                     // Validar referencias si es necesario
                     if (currentAction === 'tarea') {
-                        if (!currentReference || !currentReference.startsWith('GHU-')) {
-                            document.getElementById('folio-display').textContent = 'Error: La referencia debe ser una HU válida (ej: GHU-1.1.1)';
+                        if (!currentReference || !currentReference.startsWith('RE-')) {
+                            document.getElementById('folio-display').textContent = 'Error: La referencia debe ser una re válida (ej: RE-1.1.1)';
                             copyBtn.disabled = true;
                             return;
                         }
@@ -783,7 +787,7 @@
                 const folioText = document.getElementById('folio-display').textContent;
                 const [,,, consecutivo] = currentFolio.split(/[-.]/);
                 
-                if (currentAction === 'hu' && currentDept === 'G') {
+                if (currentAction === 're' && currentDept === 'G') {
                     const parte = parseInt(document.getElementById('parte').value) || 1;
                     const subparte = parseInt(document.getElementById('subparte').value) || 1;
                     
