@@ -581,11 +581,12 @@
 
         function selectAction(actionId) {
             currentAction = actionId;
-            if (currentAction === 're') {
+            if (currentAction === 're' || currentAction === 'error') {
                 document.getElementById('form-title').textContent = `Nuevo ${getActionName(actionId)}`;
             } else {
             document.getElementById('form-title').textContent = `Nueva ${getActionName(actionId)}`;
             }
+            console.log('Acción seleccionada:', currentAction);
             document.getElementById('form-section').style.display = 'block';
             
             loadReferenceInputs();
