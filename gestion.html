@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor de Requerimientos y Actividades</title>
+    <link rel="icon" type="image/png" href="gallina.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet">
+    <style>
+        /* (mismos estilos que en mi respuesta anterior, los dejo igual) */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f4f7fb;
+            padding: 2rem 1.5rem;
+            color: #1e293b;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        h1 {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: #0f172a;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: white;
+            padding: 1.25rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            border: 1px solid #e2e8f0;
+        }
+        .stat-title {
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #64748b;
+            margin-bottom: 0.5rem;
+        }
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .filters {
+            background: white;
+            padding: 1.25rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+            border: 1px solid #e2e8f0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: center;
+        }
+        .filter-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        .filter-label {
+            font-weight: 500;
+            color: #334155;
+        }
+        .filter-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            border: 1px solid #cbd5e1;
+            background: white;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s;
+            color: #334155;
+        }
+        .filter-btn.active {
+            background: #2563eb;
+            color: white;
+            border-color: #2563eb;
+        }
+        .filter-btn:hover {
+            background: #f1f5f9;
+        }
+        .filter-btn.active:hover {
+            background: #1d4ed8;
+        }
+        .dept-section {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            margin-bottom: 1.5rem;
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+        }
+        .dept-header {
+            background: #f8fafc;
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            border-bottom: 1px solid #e2e8f0;
+            transition: background 0.15s;
+        }
+        .dept-header:hover {
+            background: #f1f5f9;
+        }
+        .dept-title {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .dept-name {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #0f172a;
+        }
+        .dept-counts {
+            font-size: 0.875rem;
+            color: #475569;
+            background: #e2e8f0;
+            padding: 0.25rem 0.75rem;
+            border-radius: 2rem;
+        }
+        .collapse-icon {
+            font-size: 1.25rem;
+            color: #64748b;
+        }
+        .dept-content {
+            padding: 1rem 1.5rem;
+            transition: padding 0.2s;
+        }
+        .dept-content.collapsed {
+            display: none;
+        }
+        .activity-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+        .activity-table th {
+            text-align: left;
+            padding: 0.75rem 0.5rem;
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #64748b;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .activity-table td {
+            padding: 0.75rem 0.5rem;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 0.875rem;
+        }
+        .activity-table tr:last-child td {
+            border-bottom: none;
+        }
+        .tipo-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 2rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            background: #e2e8f0;
+            color: #334155;
+        }
+        .tipo-requerimiento { background: #dbeafe; color: #1e40af; }
+        .tipo-tarea { background: #dcfce7; color: #166534; }
+        .tipo-observacion { background: #fff3cd; color: #856404; }
+        .tipo-error { background: #fee2e2; color: #991b1b; }
+        .tipo-solicitud { background: #f3e8ff; color: #6b21a8; }
+        .checkbox-status {
+            width: 1.2rem;
+            height: 1.2rem;
+            cursor: pointer;
+            accent-color: #2563eb;
+        }
+        .folio {
+            font-family: monospace;
+            font-size: 0.75rem;
+            color: #475569;
+        }
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: #64748b;
+        }
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        /* Estado */
+        .activity-table th:nth-child(1),
+        .activity-table td:nth-child(1) {
+            width: 8%;
+        }
+
+        /* Título (más pequeño) */
+        .activity-table th:nth-child(2),
+        .activity-table td:nth-child(2) {
+            width: 50%;
+        }
+
+        /* Tipo */
+        .activity-table th:nth-child(3),
+        .activity-table td:nth-child(3) {
+            width: 12%;
+        }
+
+        /* Folio (más grande) */
+        .activity-table th:nth-child(4),
+        .activity-table td:nth-child(4) {
+            width: 30%;
+        }
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Gestor de Requerimientos y Actividades</h1>
+
+        <div class="stats-grid" id="statsContainer">
+            <div class="stat-card"><div class="stat-title">Total general</div><div class="stat-number" id="totalGeneral">0</div></div>
+            <div class="stat-card"><div class="stat-title">Pendientes</div><div class="stat-number" id="totalPendientes">0</div></div>
+            <div class="stat-card"><div class="stat-title">Finalizadas</div><div class="stat-number" id="totalFinalizadas">0</div></div>
+        </div>
+
+        <div class="filters">
+            <span class="filter-label">Filtrar por tipo:</span>
+            <div class="filter-group" id="tipoFilters">
+                <button class="filter-btn active" data-tipo="todos">Todos</button>
+                <button class="filter-btn" data-tipo="requerimiento">Requerimientos</button>
+                <button class="filter-btn" data-tipo="tarea">Tareas</button>
+                <button class="filter-btn" data-tipo="observacion">Observaciones</button>
+                <button class="filter-btn" data-tipo="error">Errores</button>
+                <button class="filter-btn" data-tipo="solicitud">Solicitudes</button>
+            </div>
+        </div>
+
+        <div id="departamentosContainer">
+            <div class="loading">Cargando actividades...</div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            const SUPABASE_URL = 'https://hjqpciveaiebdxdjewvx.supabase.co';
+            const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqcXBjaXZlYWllYmR4ZGpld3Z4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA2Nzc5NTQsImV4cCI6MjA4NjI1Mzk1NH0.OxwKF3J1H_4FT1R64VVkPTWgsYkaEFUpz4IqXiEZGU4';
+            const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+            // Mapeo de departamentos
+            const deptMap = {
+                'G': 'Gestión',
+                'F': 'Frontend',
+                'B': 'Backend',
+                'DO': 'DevOps',
+                'QA': 'QA',
+                'DB': 'Base de Datos'
+            };
+
+            // Estado
+            let allActivities = [];          // Array unificado de todas las actividades
+            let filteredActivities = [];
+            let currentTipoFilter = 'todos';
+            let collapseState = {};
+
+            // Elementos DOM
+            const deptContainer = document.getElementById('departamentosContainer');
+            const totalGeneralEl = document.getElementById('totalGeneral');
+            const totalPendientesEl = document.getElementById('totalPendientes');
+            const totalFinalizadasEl = document.getElementById('totalFinalizadas');
+            const tipoFilterBtns = document.querySelectorAll('[data-tipo]');
+
+            // Inicializar filtros
+            tipoFilterBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    tipoFilterBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentTipoFilter = btn.dataset.tipo;
+                    applyFilter();
+                });
+            });
+
+            function applyFilter() {
+                if (currentTipoFilter === 'todos') {
+                    filteredActivities = [...allActivities];
+                } else {
+                    filteredActivities = allActivities.filter(a => a.tipo === currentTipoFilter);
+                }
+                renderDepartamentos();
+                updateGlobalStats();
+            }
+
+            // Cargar datos combinados
+            async function fetchData() {
+                try {
+                    // 1. Obtener todos los usuarios para mapear departamento
+                    const { data: usuarios, error: usuariosError } = await supabase
+                        .from('usuarios')
+                        .select('id, nombre, departamento');
+                    
+                    if (usuariosError) throw usuariosError;
+                    
+                    // Crear mapa de usuario_id -> { nombre, departamento }
+                    const usuarioMap = {};
+                    usuarios.forEach(u => {
+                        usuarioMap[u.id] = { nombre: u.nombre, departamento: u.departamento };
+                    });
+
+                    // 2. Obtener todas las historias_usuario (requerimientos)
+                    const { data: historias, error: historiasError } = await supabase
+                        .from('historias_usuario')
+                        .select('*');
+                    
+                    if (historiasError) throw historiasError;
+
+                    // 3. Obtener todas las actividades (tareas, errores, solicitudes, observaciones)
+                    const { data: actividades, error: actividadesError } = await supabase
+                        .from('actividades')
+                        .select('*');
+                    
+                    if (actividadesError) throw actividadesError;
+
+                    // 4. Unificar: convertir cada registro a un formato común
+                    const unified = [];
+
+                    // Procesar historias (requerimientos)
+                    historias.forEach(h => {
+                        const usuario = usuarioMap[h.usuario_id] || { nombre: 'Sin asignar', departamento: null };
+                        if (!usuario.departamento) return; // ignorar si no tiene departamento
+                        unified.push({
+                            id: h.id,
+                            titulo: h.titulo || '',
+                            folio: h.folio || '',
+                            status: h.status || 'pendiente', // si no existe, asumir pendiente
+                            tipo: 'requerimiento',
+                            departamento: usuario.departamento,
+                            // Guardamos también el id original y la tabla para actualizar después
+                            tabla_origen: 'historias_usuario'
+                        });
+                    });
+
+                    // Procesar actividades
+                    actividades.forEach(a => {
+                        // La tabla actividades ya tiene campo departamento
+                        if (!a.departamento) return;
+                        // Mapear tipo_actividad a tipo (puede venir como 'tarea','error','solicitud','observacion')
+                        let tipo = a.tipo_actividad;
+                        // Si no viene, asignar por defecto 'tarea'
+                        if (!tipo) tipo = 'tarea';
+                        unified.push({
+                            id: a.id,
+                            titulo: a.titulo || '',
+                            folio: a.folio || '',
+                            status: a.status || 'pendiente',
+                            tipo: tipo,
+                            departamento: a.departamento,
+                            tabla_origen: 'actividades'
+                        });
+                    });
+
+                    allActivities = unified;
+
+                    // Inicializar collapse state para cada departamento presente
+                    const depts = [...new Set(allActivities.map(a => a.departamento).filter(Boolean))];
+                    depts.forEach(d => { if (collapseState[d] === undefined) collapseState[d] = false; });
+
+                    applyFilter();
+                } catch (err) {
+                    deptContainer.innerHTML = `<div class="error">Error al cargar datos: ${err.message}</div>`;
+                    console.error(err);
+                }
+            }
+
+            // Renderizado de departamentos
+            function renderDepartamentos() {
+                if (!filteredActivities.length) {
+                    deptContainer.innerHTML = '<div class="error">No hay actividades para mostrar con el filtro actual.</div>';
+                    updateGlobalStats();
+                    return;
+                }
+
+                // Agrupar por departamento
+                const groups = {};
+                filteredActivities.forEach(act => {
+                    const dept = act.departamento;
+                    if (!dept) return;
+                    if (!groups[dept]) groups[dept] = [];
+                    groups[dept].push(act);
+                });
+
+                // Ordenar departamentos por nombre
+                const sortedDepts = Object.keys(groups).sort((a,b) => 
+                    (deptMap[a] || a).localeCompare(deptMap[b] || b)
+                );
+
+                let html = '';
+                for (let deptCode of sortedDepts) {
+                    const deptName = deptMap[deptCode] || deptCode;
+                    const activities = groups[deptCode];
+                    const total = activities.length;
+                    const pendientes = activities.filter(a => a.status === 'pendiente').length;
+                    const finalizadas = total - pendientes;
+                    const isCollapsed = collapseState[deptCode] || false;
+
+                    html += `
+                        <div class="dept-section" data-departamento="${deptCode}">
+                            <div class="dept-header" onclick="window.toggleDepartment('${deptCode}')">
+                                <div class="dept-title">
+                                    <span class="dept-name">${deptName}</span>
+                                    <span class="dept-counts">${pendientes} pendientes · ${finalizadas} finalizadas</span>
+                                </div>
+                                <span class="collapse-icon">${isCollapsed ? '▼' : '▲'}</span>
+                            </div>
+                            <div class="dept-content ${isCollapsed ? 'collapsed' : ''}">
+                                <table class="activity-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Estado</th>
+                                            <th>Título</th>
+                                            <th>Tipo</th>
+                                            <th>Folio</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                    `;
+
+                    activities.forEach(act => {
+                        const tipoClass = `tipo-${act.tipo}`;
+                        const checked = act.status === 'finalizada' ? 'checked' : '';
+                        html += `
+                            <tr data-id="${act.id}" data-tabla="${act.tabla_origen}">
+                                <td><input type="checkbox" class="checkbox-status" ${checked} onchange="window.toggleStatus('${act.id}', '${act.tabla_origen}', this.checked)"></td>
+                                <td>${act.titulo}</td>
+                                <td><span class="tipo-badge ${tipoClass}">${act.tipo}</span></td>
+                                <td class="folio">${act.folio}</td>
+                            </tr>
+                        `;
+                    });
+
+                    html += `
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                deptContainer.innerHTML = html;
+            }
+
+            // Actualizar estadísticas globales
+            function updateGlobalStats() {
+                const total = filteredActivities.length;
+                const pendientes = filteredActivities.filter(a => a.status === 'pendiente').length;
+                const finalizadas = filteredActivities.filter(a => a.status === 'finalizada').length;
+                totalGeneralEl.textContent = total;
+                totalPendientesEl.textContent = pendientes;
+                totalFinalizadasEl.textContent = finalizadas;
+            }
+
+            // Cambiar estado (checkbox)
+            window.toggleStatus = async (id, tabla, checked) => {
+                const newStatus = checked ? 'finalizada' : 'pendiente';
+                try {
+                    const { error } = await supabase
+                        .from(tabla)
+                        .update({ status: newStatus })
+                        .eq('id', id);
+
+                    if (error) throw error;
+
+                    // Actualizar en allActivities y filteredActivities
+                    const updateInArray = (arr) => {
+                        const item = arr.find(a => a.id === id && a.tabla_origen === tabla);
+                        if (item) item.status = newStatus;
+                    };
+                    updateInArray(allActivities);
+                    updateInArray(filteredActivities);
+
+                    // Re-renderizar
+                    renderDepartamentos();
+                    updateGlobalStats();
+                } catch (err) {
+                    alert('Error al actualizar estado: ' + err.message);
+                    console.error(err);
+                }
+            };
+
+            // Colapsar/expandir departamento
+            window.toggleDepartment = (deptCode) => {
+                collapseState[deptCode] = !collapseState[deptCode];
+                renderDepartamentos();
+            };
+
+            // Iniciar
+            fetchData();
+        })();
+    </script>
+</body>
+</html>
