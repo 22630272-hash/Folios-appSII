@@ -331,15 +331,15 @@
                     // 2. Obtener todas las historias_usuario (requerimientos)
                     const { data: historias, error: historiasError } = await supabase
                         .from('historias_usuario')
-                        .select('*');
+                        .select('*').order('folio', { ascending: false });
                     
                     if (historiasError) throw historiasError;
 
                     // 3. Obtener todas las actividades (tareas, errores, solicitudes, observaciones)
                     const { data: actividades, error: actividadesError } = await supabase
                         .from('actividades')
-                        .select('*');
-                    
+                        .select('*').order('folio', { ascending: false });
+
                     if (actividadesError) throw actividadesError;
 
                     // 4. Unificar: convertir cada registro a un formato común
