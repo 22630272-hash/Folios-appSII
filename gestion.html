@@ -9,7 +9,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet">
     <style>
-        /* (mismos estilos que en mi respuesta anterior, los dejo igual) */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -209,32 +208,135 @@
             border-radius: 0.5rem;
             margin-bottom: 1rem;
         }
-        /* Estado */
+        /* Ajustes de ancho de columnas */
         .activity-table th:nth-child(1),
-        .activity-table td:nth-child(1) {
-            width: 8%;
-        }
-
-        /* Título (más pequeño) */
+        .activity-table td:nth-child(1) { width: 8%; }
         .activity-table th:nth-child(2),
-        .activity-table td:nth-child(2) {
-            width: 50%;
-        }
-
-        /* Tipo */
+        .activity-table td:nth-child(2) { width: 40%; }
         .activity-table th:nth-child(3),
-        .activity-table td:nth-child(3) {
-            width: 12%;
-        }
-
-        /* Folio (más grande) */
+        .activity-table td:nth-child(3) { width: 10%; }
         .activity-table th:nth-child(4),
-        .activity-table td:nth-child(4) {
-            width: 30%;
-        }
+        .activity-table td:nth-child(4) { width: 17%; }
+        .activity-table th:nth-child(5),
+        .activity-table td:nth-child(5) { width: 25%; }
 
+        /* Estilos para el modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 1rem;
+            max-width: 1200px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 2rem;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        .modal-header h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 2rem;
+            cursor: pointer;
+            color: #64748b;
+        }
+        .period-selector {
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .period-selector label {
+            font-weight: 500;
+        }
+        .period-selector select {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid #cbd5e1;
+            font-size: 1rem;
+        }
+        .preview-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+        .preview-table th {
+            background: #f1f5f9;
+            padding: 0.75rem;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+        }
+        .preview-table td {
+            padding: 0.5rem;
+            border: 1px solid #e2e8f0;
+            text-align: center;
+        }
+        .preview-table td:first-child {
+            font-weight: 500;
+            background: #f8fafc;
+            text-align: left;
+        }
+        .preview-table input, .preview-table textarea {
+            width: 100%;
+            padding: 0.25rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.25rem;
+            font-family: inherit;
+            font-size: inherit;
+        }
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 2rem;
+            border: none;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #1d4ed8;
+        }
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #1e293b;
+        }
+        .btn-secondary:hover {
+            background: #cbd5e1;
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -256,6 +358,10 @@
                 <button class="filter-btn" data-tipo="error">Errores</button>
                 <button class="filter-btn" data-tipo="solicitud">Solicitudes</button>
             </div>
+            <div style="margin-left: auto; display: flex; gap: 0.5rem;">
+                <button class="filter-btn" id="btnCerrarPeriodo">📅 Cerrar periodo</button>
+                <button class="filter-btn" id="btnGenerarReporte">📄 Generar reporte</button>
+            </div>
         </div>
 
         <div id="departamentosContainer">
@@ -263,13 +369,36 @@
         </div>
     </div>
 
+    <!-- Modal para generar reporte -->
+    <div id="reportModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Generar reporte comparativo</h2>
+                <button class="close-modal" onclick="cerrarModal()">&times;</button>
+            </div>
+            <div class="period-selector">
+                <label for="periodoSelect">Seleccionar período:</label>
+                <select id="periodoSelect" onchange="cargarDatosPeriodo()"></select>
+            </div>
+            <div id="previewTableContainer">
+                <!-- La tabla se generará dinámicamente -->
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="cerrarModal()">Cancelar</button>
+                <button class="btn btn-primary" onclick="descargarPDF()">Descargar PDF</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         (function() {
+            // --- Configuración de Supabase ---
             const SUPABASE_URL = 'https://hjqpciveaiebdxdjewvx.supabase.co';
             const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqcXBjaXZlYWllYmR4ZGpld3Z4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA2Nzc5NTQsImV4cCI6MjA4NjI1Mzk1NH0.OxwKF3J1H_4FT1R64VVkPTWgsYkaEFUpz4IqXiEZGU4';
             const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            window.supabaseClient = supabase;
 
-            // Mapeo de departamentos
+            // --- Mapeo de departamentos ---
             const deptMap = {
                 'G': 'Gestión',
                 'F': 'Frontend',
@@ -278,21 +407,43 @@
                 'QA': 'QA',
                 'DB': 'Base de Datos'
             };
+            const deptCodes = ['B', 'DB', 'DO', 'F', 'QA']; // Solo estos departamentos para el resumen
 
-            // Estado
-            let allActivities = [];          // Array unificado de todas las actividades
+            // --- Estado global ---
+            let allActivities = [];
             let filteredActivities = [];
             let currentTipoFilter = 'todos';
             let collapseState = {};
 
-            // Elementos DOM
+            // --- Elementos DOM ---
             const deptContainer = document.getElementById('departamentosContainer');
             const totalGeneralEl = document.getElementById('totalGeneral');
             const totalPendientesEl = document.getElementById('totalPendientes');
             const totalFinalizadasEl = document.getElementById('totalFinalizadas');
             const tipoFilterBtns = document.querySelectorAll('[data-tipo]');
 
-            // Inicializar filtros
+            // --- Variables para el modal ---
+            let periodosList = [];
+            let periodoActualId = null;
+            let periodoAnteriorId = null;
+            let resumenActual = {};
+            let resumenAnterior = {};
+            let observacionesEdit = {}; // { dept: texto }
+
+            // --- Funciones auxiliares ---
+            function formatearFecha(fechaISO) {
+                if (!fechaISO) return '-';
+                const fecha = new Date(fechaISO);
+                return fecha.toLocaleString('es-ES', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            }
+
+            // --- Filtros ---
             tipoFilterBtns.forEach(btn => {
                 btn.addEventListener('click', () => {
                     tipoFilterBtns.forEach(b => b.classList.remove('active'));
@@ -312,68 +463,57 @@
                 updateGlobalStats();
             }
 
-            // Cargar datos combinados
+            // --- Carga de datos desde Supabase ---
             async function fetchData() {
                 try {
-                    // 1. Obtener todos los usuarios para mapear departamento
                     const { data: usuarios, error: usuariosError } = await supabase
                         .from('usuarios')
                         .select('id, nombre, departamento');
-                    
                     if (usuariosError) throw usuariosError;
-                    
-                    // Crear mapa de usuario_id -> { nombre, departamento }
+
                     const usuarioMap = {};
                     usuarios.forEach(u => {
                         usuarioMap[u.id] = { nombre: u.nombre, departamento: u.departamento };
                     });
 
-                    // 2. Obtener todas las historias_usuario (requerimientos)
                     const { data: historias, error: historiasError } = await supabase
                         .from('historias_usuario')
-                        .select('*').order('folio', { ascending: false });
-                    
+                        .select('id, titulo, folio, status, fecha_finalizacion, usuario_id')
+                        .order('folio', { ascending: false });
                     if (historiasError) throw historiasError;
 
-                    // 3. Obtener todas las actividades (tareas, errores, solicitudes, observaciones)
                     const { data: actividades, error: actividadesError } = await supabase
                         .from('actividades')
-                        .select('*').order('folio', { ascending: false });
-
+                        .select('id, titulo, folio, status, fecha_finalizacion, tipo_actividad, departamento')
+                        .order('folio', { ascending: false });
                     if (actividadesError) throw actividadesError;
 
-                    // 4. Unificar: convertir cada registro a un formato común
                     const unified = [];
 
-                    // Procesar historias (requerimientos)
                     historias.forEach(h => {
                         const usuario = usuarioMap[h.usuario_id] || { nombre: 'Sin asignar', departamento: null };
-                        if (!usuario.departamento) return; // ignorar si no tiene departamento
+                        if (!usuario.departamento) return;
                         unified.push({
                             id: h.id,
                             titulo: h.titulo || '',
                             folio: h.folio || '',
-                            status: h.status || 'pendiente', // si no existe, asumir pendiente
+                            status: h.status || 'pendiente',
+                            fecha_finalizacion: h.fecha_finalizacion || null,
                             tipo: 'requerimiento',
                             departamento: usuario.departamento,
-                            // Guardamos también el id original y la tabla para actualizar después
                             tabla_origen: 'historias_usuario'
                         });
                     });
 
-                    // Procesar actividades
                     actividades.forEach(a => {
-                        // La tabla actividades ya tiene campo departamento
                         if (!a.departamento) return;
-                        // Mapear tipo_actividad a tipo (puede venir como 'tarea','error','solicitud','observacion')
-                        let tipo = a.tipo_actividad;
-                        // Si no viene, asignar por defecto 'tarea'
-                        if (!tipo) tipo = 'tarea';
+                        let tipo = a.tipo_actividad || 'tarea';
                         unified.push({
                             id: a.id,
                             titulo: a.titulo || '',
                             folio: a.folio || '',
                             status: a.status || 'pendiente',
+                            fecha_finalizacion: a.fecha_finalizacion || null,
                             tipo: tipo,
                             departamento: a.departamento,
                             tabla_origen: 'actividades'
@@ -381,8 +521,6 @@
                     });
 
                     allActivities = unified;
-
-                    // Inicializar collapse state para cada departamento presente
                     const depts = [...new Set(allActivities.map(a => a.departamento).filter(Boolean))];
                     depts.forEach(d => { if (collapseState[d] === undefined) collapseState[d] = false; });
 
@@ -393,7 +531,7 @@
                 }
             }
 
-            // Renderizado de departamentos
+            // --- Renderizado por departamentos ---
             function renderDepartamentos() {
                 if (!filteredActivities.length) {
                     deptContainer.innerHTML = '<div class="error">No hay actividades para mostrar con el filtro actual.</div>';
@@ -401,7 +539,6 @@
                     return;
                 }
 
-                // Agrupar por departamento
                 const groups = {};
                 filteredActivities.forEach(act => {
                     const dept = act.departamento;
@@ -410,8 +547,7 @@
                     groups[dept].push(act);
                 });
 
-                // Ordenar departamentos por nombre
-                const sortedDepts = Object.keys(groups).sort((a,b) => 
+                const sortedDepts = Object.keys(groups).sort((a, b) => 
                     (deptMap[a] || a).localeCompare(deptMap[b] || b)
                 );
 
@@ -441,6 +577,7 @@
                                             <th>Título</th>
                                             <th>Tipo</th>
                                             <th>Folio</th>
+                                            <th>Fecha de Finalización</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -449,12 +586,14 @@
                     activities.forEach(act => {
                         const tipoClass = `tipo-${act.tipo}`;
                         const checked = act.status === 'finalizada' ? 'checked' : '';
+                        const fechaMostrar = act.status === 'finalizada' ? formatearFecha(act.fecha_finalizacion) : '-';
                         html += `
                             <tr data-id="${act.id}" data-tabla="${act.tabla_origen}">
                                 <td><input type="checkbox" class="checkbox-status" ${checked} onchange="window.toggleStatus('${act.id}', '${act.tabla_origen}', this.checked)"></td>
                                 <td>${act.titulo}</td>
                                 <td><span class="tipo-badge ${tipoClass}">${act.tipo}</span></td>
                                 <td class="folio">${act.folio}</td>
+                                <td>${fechaMostrar}</td>
                             </tr>
                         `;
                     });
@@ -470,7 +609,6 @@
                 deptContainer.innerHTML = html;
             }
 
-            // Actualizar estadísticas globales
             function updateGlobalStats() {
                 const total = filteredActivities.length;
                 const pendientes = filteredActivities.filter(a => a.status === 'pendiente').length;
@@ -480,26 +618,32 @@
                 totalFinalizadasEl.textContent = finalizadas;
             }
 
-            // Cambiar estado (checkbox)
             window.toggleStatus = async (id, tabla, checked) => {
                 const newStatus = checked ? 'finalizada' : 'pendiente';
+                const fechaAhora = checked ? new Date().toISOString() : null;
+                const updateData = { 
+                    status: newStatus,
+                    fecha_finalizacion: fechaAhora
+                };
+
                 try {
                     const { error } = await supabase
                         .from(tabla)
-                        .update({ status: newStatus })
+                        .update(updateData)
                         .eq('id', id);
 
                     if (error) throw error;
 
-                    // Actualizar en allActivities y filteredActivities
                     const updateInArray = (arr) => {
                         const item = arr.find(a => a.id === id && a.tabla_origen === tabla);
-                        if (item) item.status = newStatus;
+                        if (item) {
+                            item.status = newStatus;
+                            item.fecha_finalizacion = fechaAhora;
+                        }
                     };
                     updateInArray(allActivities);
                     updateInArray(filteredActivities);
 
-                    // Re-renderizar
                     renderDepartamentos();
                     updateGlobalStats();
                 } catch (err) {
@@ -508,11 +652,547 @@
                 }
             };
 
-            // Colapsar/expandir departamento
             window.toggleDepartment = (deptCode) => {
                 collapseState[deptCode] = !collapseState[deptCode];
                 renderDepartamentos();
             };
+
+            // --- Funciones para periodos y resúmenes ---
+            async function obtenerUltimoPeriodo() {
+                const { data, error } = await supabase
+                    .from('periodos')
+                    .select('*')
+                    .order('fecha_fin', { ascending: false })
+                    .limit(1);
+                if (error) throw error;
+                return data[0] || null;
+            }
+
+            async function obtenerDosUltimosPeriodos() {
+                const { data, error } = await supabase
+                    .from('periodos')
+                    .select('*')
+                    .order('fecha_fin', { ascending: false })
+                    .limit(2);
+                if (error) throw error;
+                return data;
+            }
+
+            // Obtener todos los periodos ordenados por número (asumiendo campo 'numero')
+            async function obtenerTodosPeriodos() {
+                const { data, error } = await supabase
+                    .from('periodos')
+                    .select('*')
+                    .order('fecha_fin', { ascending: false }); // Usamos fecha_fin para orden cronológico
+                if (error) throw error;
+                return data;
+            }
+
+            function formatearFechaParaNombre(fecha) {
+                const meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+                const d = new Date(fecha);
+                return `${d.getDate()} ${meses[d.getMonth()]}`;
+            }
+
+            // --- Cerrar periodo: insertar nuevo periodo y resumen ---
+            document.getElementById('btnCerrarPeriodo').addEventListener('click', async () => {
+                try {
+                    const ultimo = await obtenerUltimoPeriodo();
+                    let inicio;
+                    if (ultimo) {
+                        const finAnterior = new Date(ultimo.fecha_fin);
+                        inicio = new Date(finAnterior.getTime() + 24 * 60 * 60 * 1000);
+                        inicio.setHours(0, 0, 0, 0);
+                    } else {
+                        inicio = new Date();
+                        inicio.setDate(inicio.getDate() - 7);
+                        inicio.setHours(0, 0, 0, 0);
+                    }
+
+                    const fin = new Date();
+                    fin.setHours(23, 59, 59, 999);
+
+                    const nombreInicio = formatearFechaParaNombre(inicio);
+                    const nombreFin = formatearFechaParaNombre(fin);
+                    const nombre = `${nombreInicio} - ${nombreFin}`;
+
+                    const { data: nuevoPeriodo, error: errorPeriodo } = await supabase
+                        .from('periodos')
+                        .insert([{
+                            fecha_inicio: inicio.toISOString(),
+                            fecha_fin: fin.toISOString(),
+                            nombre: nombre
+                        }])
+                        .select();
+
+                    if (errorPeriodo) throw errorPeriodo;
+                    const nuevoPeriodoId = nuevoPeriodo[0].id;
+
+                    // Obtener todas las actividades
+                    const { data: todasActividades, error: actError } = await supabase
+                        .from('actividades')
+                        .select('departamento, status');
+                    if (actError) throw actError;
+
+                    const resumenPorDept = {};
+                    deptCodes.forEach(d => { resumenPorDept[d] = { total: 0, pendientes: 0 }; });
+
+                    todasActividades.forEach(act => {
+                        const dept = act.departamento;
+                        if (deptCodes.includes(dept)) {
+                            resumenPorDept[dept].total++;
+                            if (act.status === 'pendiente') {
+                                resumenPorDept[dept].pendientes++;
+                            }
+                        }
+                    });
+
+                    for (let dept of deptCodes) {
+                        const { total, pendientes } = resumenPorDept[dept];
+                        const { error: insertError } = await supabase
+                            .from('resumen_tareas_departamento')
+                            .insert([{
+                                id_periodo: nuevoPeriodoId,
+                                tareas_totales: total,
+                                tareas_pendientes: pendientes,
+                                departamento: dept
+                            }]);
+                        if (insertError) throw insertError;
+                    }
+
+                    alert('Periodo cerrado correctamente y resumen actualizado');
+                } catch (err) {
+                    alert('Error al cerrar periodo: ' + err.message);
+                }
+            });
+
+            // --- Modal y generación de reporte ---
+            const modal = document.getElementById('reportModal');
+            const periodoSelect = document.getElementById('periodoSelect');
+            const previewContainer = document.getElementById('previewTableContainer');
+
+            window.cerrarModal = function() {
+                modal.style.display = 'none';
+            };
+
+            document.getElementById('btnGenerarReporte').addEventListener('click', async () => {
+                try {
+                    // Cargar lista de periodos
+                    periodosList = await obtenerTodosPeriodos();
+                    if (periodosList.length === 0) {
+                        alert('No hay períodos registrados');
+                        return;
+                    }
+
+                    // Llenar select
+                    periodoSelect.innerHTML = '';
+                    periodosList.forEach(p => {
+                        const option = document.createElement('option');
+                        option.value = p.id;
+                        option.textContent = `${p.nombre} (ID: ${p.id})`;
+                        periodoSelect.appendChild(option);
+                    });
+                    // Seleccionar el primero (más reciente)
+                    periodoSelect.selectedIndex = 0;
+                    await cargarDatosPeriodo();
+
+                    modal.style.display = 'flex';
+                } catch (err) {
+                    alert('Error al abrir el modal: ' + err.message);
+                }
+            });
+
+            window.cargarDatosPeriodo = async function() {
+                const periodoId = periodoSelect.value;
+                if (!periodoId) return;
+                try {
+                    // Obtener el periodo seleccionado y el anterior
+                    const index = periodosList.findIndex(p => p.id === Number(periodoId));
+                    console.log('Periodos disponibles:', periodosList);
+
+                    if (index === -1) return;
+                    periodoActualId = periodoId;
+                    const periodoActual = periodosList[index];
+                    const periodoAnterior = index < periodosList.length - 1 ? periodosList[index + 1] : null;
+                    periodoAnteriorId = periodoAnterior ? periodoAnterior.id : null;
+
+                    // Cargar resúmenes
+                    const { data: resActual, error: errActual } = await supabase
+                        .from('resumen_tareas_departamento')
+                        .select('*')
+                        .eq('id_periodo', periodoActualId);
+                    if (errActual) throw errActual;
+
+                    const { data: resAnterior, error: errAnterior } = await supabase
+                        .from('resumen_tareas_departamento')
+                        .select('*')
+                        .eq('id_periodo', periodoAnteriorId || '');
+                    if (errAnterior) throw errAnterior;
+
+                    // Organizar por departamento
+                    resumenActual = {};
+                    resActual.forEach(r => { resumenActual[r.departamento] = r; });
+                    resumenAnterior = {};
+                    if (resAnterior) {
+                        resAnterior.forEach(r => { resumenAnterior[r.departamento] = r; });
+                    }
+
+                    // Inicializar observacionesEdit con los valores actuales
+                    deptCodes.forEach(d => {
+                        observacionesEdit[d] = resumenActual[d]?.observaciones || '';
+                    });
+
+                    renderPreviewTable(periodoActual, periodoAnterior);
+                } catch (err) {
+                    alert('Error al cargar datos del período: ' + err.message);
+                }
+            };
+
+            function renderPreviewTable(periodoActual, periodoAnterior) {
+                let html = '<table class="preview-table"><thead><tr><th>Concepto</th>';
+                deptCodes.forEach(code => {
+                    html += `<th>${deptMap[code] || code}</th>`;
+                });
+                html += '</tr></thead><tbody>';
+
+                // Filas de la tabla
+                const rows = [
+                    { label: 'Total de tareas del periodo anterior', key: 'totalAnterior' },
+                    { label: 'Total de tareas del periodo actual', key: 'totalActual' },
+                    { label: 'Diferencia', key: 'diferencia' },
+                    { label: 'Tareas terminadas', key: 'terminadas' },
+                    { label: '% de tareas terminadas', key: 'porcTerminadas' },
+                    { label: 'Tareas pendientes', key: 'pendientes' },
+                    { label: '% de tareas pendientes', key: 'porcPendientes' },
+                    { label: 'Observaciones', key: 'observaciones', editable: true }
+                ];
+
+                rows.forEach(row => {
+                    html += '<tr><td>' + row.label + '</td>';
+                    deptCodes.forEach(code => {
+                        const actual = resumenActual[code] || { tareas_totales: 0, tareas_pendientes: 0 };
+                        const anterior = resumenAnterior[code] || { tareas_totales: 0, tareas_pendientes: 0 };
+                        const totalActual = actual.tareas_totales || 0;
+                        const totalAnterior = anterior.tareas_totales || 0;
+                        const pendientes = actual.tareas_pendientes || 0;
+                        const terminadas = totalActual - pendientes;
+                        const porcTerminadas = totalActual > 0 ? ((terminadas / totalActual) * 100).toFixed(2) : '0.00';
+                        const porcPendientes = (100 - parseFloat(porcTerminadas)).toFixed(2);
+
+                        let value = '';
+                        if (row.key === 'totalAnterior') value = totalAnterior;
+                        else if (row.key === 'totalActual') value = totalActual;
+                        else if (row.key === 'diferencia') value = totalActual - totalAnterior;
+                        else if (row.key === 'terminadas') value = terminadas;
+                        else if (row.key === 'porcTerminadas') value = porcTerminadas + '%';
+                        else if (row.key === 'pendientes') value = pendientes;
+                        else if (row.key === 'porcPendientes') value = porcPendientes + '%';
+                        else if (row.key === 'observaciones') {
+                            // Campo editable
+                            value = `<textarea oninput="actualizarObservacion('${code}', this.value)" rows="2">${observacionesEdit[code] || ''}</textarea>`;
+                        }
+
+                        html += `<td>${value}</td>`;
+                    });
+                    html += '</tr>';
+                });
+
+                html += '</tbody></table>';
+                previewContainer.innerHTML = html;
+            }
+
+            // Actualizar observaciones en memoria
+            window.actualizarObservacion = function(dept, valor) {
+                observacionesEdit[dept] = valor;
+            };
+
+            // Guardar observaciones en Supabase
+            async function guardarObservaciones() {
+                const updates = [];
+                for (let dept of deptCodes) {
+                    const resumenId = resumenActual[dept]?.id;
+                    if (resumenId) {
+                        updates.push(
+                            supabase
+                                .from('resumen_tareas_departamento')
+                                .update({ observaciones: observacionesEdit[dept] })
+                                .eq('id', resumenId)
+                        );
+                    } else {
+                        // Si no existe resumen para este departamento en el período actual, podría crearse, pero según lógica debería existir
+                        console.warn(`No hay resumen para el departamento ${dept} en el período actual`);
+                    }
+                }
+                await Promise.all(updates);
+            }
+
+            // Descargar PDF con los datos actuales
+            window.descargarPDF = async function() {
+                try {
+                    await guardarObservaciones();
+                    // Volver a cargar los datos para asegurar tener las observaciones actualizadas
+                    await cargarDatosPeriodo(); // Recarga los datos (incluyendo observaciones)
+                    generarPDFConObservaciones(periodoActualId, periodoAnteriorId);
+                } catch (err) {
+                    alert('Error al guardar observaciones: ' + err.message);
+                }
+            };
+
+            function generarPDFConObservaciones(periodoActualId, periodoAnteriorId) {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                //Portada
+                // Obtener tamaño de página
+                const pageWidth = doc.internal.pageSize.getWidth();
+                const pageHeight = doc.internal.pageSize.getHeight();
+
+                // Fecha actual
+                const fecha = new Date().toLocaleDateString('es-MX', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+
+                // Color del triángulo
+                doc.setFillColor(163, 231, 255);
+
+                // Triángulo rectángulo desde la esquina inferior izquierda
+                doc.triangle(
+                    0, pageHeight,          // esquina inferior izquierda
+                    0, 0,    // sube por el lado izquierdo
+                    pageWidth, pageHeight,        // se extiende hacia la derecha
+                    "F"                     // F = Fill (relleno)
+                );
+
+                // ----- ENCABEZADO -----
+                doc.setFontSize(16);
+                doc.setFont(undefined, "normal");
+
+                doc.text("Instituto Tecnológico de Ocotlán", pageWidth - 10, 20, { align: "right" });
+                doc.setFontSize(12);
+                doc.text("Ocotlán, Jalisco. México", pageWidth - 10, 26, { align: "right" });
+
+                // Fecha
+                doc.text(fecha, pageWidth - 10, 34, { align: "right" });
+
+
+                // ----- TÍTULO PRINCIPAL (CENTRO DE LA HOJA) -----
+                doc.setFontSize(26);
+                doc.setFont(undefined, "bold");
+
+                doc.text(
+                    "Reporte de tareas y actividades",
+                    pageWidth / 2,
+                    pageHeight / 2 - 10,
+                    { align: "center" }
+                );
+
+                doc.setFontSize(18);
+                doc.setFont(undefined, "normal");
+
+                doc.text(
+                    "(representación de avances)",
+                    pageWidth / 2,
+                    pageHeight / 2 + 3,
+                    { align: "center" }
+                );
+
+                doc.text(
+                    "Redactado por Geovanny de la Torre Covarrubias",
+                    pageWidth / 2,
+                    pageHeight / 2 + 10,
+                    { align: "center" },
+                    { fontSize: 12 }
+                );
+
+
+                // ----- NUEVA PÁGINA PARA EL CONTENIDO -----
+                doc.addPage();
+
+
+                // Obtener nombres de periodos
+                const periodoActual = periodosList.find(p => p.id === Number(periodoActualId));
+                const periodoAnterior = periodosList.find(p => p.id === periodoAnteriorId);
+
+                // Título
+                doc.setFontSize(18);
+                doc.text(
+                    `Reporte de avances del periodo ${periodoActual?.nombre || ''}`,
+                    pageWidth / 2,
+                    20,
+                    { align: "center" }
+                );
+
+                // Preparar datos para la tabla
+                const headers = [['Concepto', ...deptCodes.map(d => deptMap[d] || d)]];
+                const rows = [];
+
+                const rowKeys = [
+                    { label: 'Total tareas periodo anterior', key: 'totalAnterior' },
+                    { label: 'Total tareas periodo actual', key: 'totalActual' },
+                    { label: 'Diferencia', key: 'diferencia' },
+                    { label: 'Tareas terminadas', key: 'terminadas' },
+                    { label: '% terminadas', key: 'porcTerminadas' },
+                    { label: 'Tareas pendientes', key: 'pendientes' },
+                    { label: '% pendientes', key: 'porcPendientes' },
+                    { label: 'Observaciones', key: 'observaciones' }
+                ];
+
+                for (let r of rowKeys) {
+                    const row = [r.label];
+                    for (let code of deptCodes) {
+                        const actual = resumenActual[code] || { tareas_totales: 0, tareas_pendientes: 0 };
+                        const anterior = resumenAnterior[code] || { tareas_totales: 0, tareas_pendientes: 0 };
+                        const totalActual = actual.tareas_totales || 0;
+                        const totalAnterior = anterior.tareas_totales || 0;
+                        const pendientes = actual.tareas_pendientes || 0;
+                        const terminadas = totalActual - pendientes;
+                        const porcTerminadas = totalActual > 0 ? ((terminadas / totalActual) * 100).toFixed(2) : '0.00';
+                        const porcPendientes = (100 - parseFloat(porcTerminadas)).toFixed(2);
+
+                        let value = '';
+                        if (r.key === 'totalAnterior') value = totalAnterior;
+                        else if (r.key === 'totalActual') value = totalActual;
+                        else if (r.key === 'diferencia') value = totalActual - totalAnterior;
+                        else if (r.key === 'terminadas') value = terminadas;
+                        else if (r.key === 'porcTerminadas') value = porcTerminadas + '%';
+                        else if (r.key === 'pendientes') value = pendientes;
+                        else if (r.key === 'porcPendientes') value = porcPendientes + '%';
+                        else if (r.key === 'observaciones') value = actual.observaciones || '';
+
+                        row.push(value);
+                    }
+                    rows.push(row);
+                }
+
+                // Generar tabla con autoTable
+                doc.autoTable({
+                    head: headers,
+                    body: rows,
+                    startY: 30,
+                    theme: 'grid',
+                    headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255], fontStyle: 'bold'},
+                    styles: { fontSize: 8, cellPadding: 2, halign: 'center', textColor: [0, 0, 0] },
+                    columnStyles: { 0: { halign: 'left', fontStyle: 'bold' } },
+
+                    didParseCell: function (data) {
+                        if (data.section === 'body') {
+
+                            if (data.row.index === 1) {
+                                data.cell.styles.fillColor = [47, 132, 212];
+                                data.cell.styles.textColor = [255,255,255];
+                            }
+
+                            if (data.row.index === 3) {
+                                data.cell.styles.fillColor = [47, 212, 52];
+                                data.cell.styles.textColor = [255,255,255];
+                            }
+
+                            if (data.row.index === 5) {
+                                data.cell.styles.fillColor = [255, 99, 71];
+                                data.cell.styles.textColor = [255,255,255];
+                            }
+
+                        }
+                    }
+                });
+
+                // Nueva página para la gráfica
+                doc.setFontSize(18);
+                const tituloY = 120;
+
+                doc.text(
+                    'Gráfica de tareas por departamento',
+                    pageWidth / 2,
+                    tituloY,
+                    { align: 'center' }
+                );
+
+                // Dibujar gráfica mejorada (usando códigos cortos para evitar solapamientos)
+                const chartX = 30;
+                const barWidth = 20;
+                const spacing = 15;
+                const chartHeight = 80;
+
+                const maxValue = Math.max(
+                    ...deptCodes.map(d => resumenActual[d]?.tareas_totales || 0),
+                    ...deptCodes.map(d => (resumenActual[d]?.tareas_totales || 0) - (resumenActual[d]?.tareas_pendientes || 0))
+                ) * 1.2;
+
+                const scale = chartHeight / maxValue;
+                const maxBarHeight = maxValue * scale;
+
+                const espacioTitulo = 10;
+                const chartY = tituloY + espacioTitulo + maxBarHeight;
+
+                // Dibujar ejes
+                // doc.setDrawColor(0);
+                // doc.line(chartX - 5, chartY, chartX - 5, chartY - chartHeight - 5);
+                // doc.line(chartX - 5, chartY, chartX + (barWidth + spacing) * deptCodes.length, chartY);
+
+                let x = chartX;
+                const puntosLinea = [];
+
+                deptCodes.forEach((code, i) => {
+                    const total = resumenActual[code]?.tareas_totales || 0;
+                    const pend = resumenActual[code]?.tareas_pendientes || 0;
+                    const fin = total - pend;
+
+                    const totalHeight = total * scale;
+                    const pendHeight = pend * scale;
+                    const finHeight = fin * scale;
+
+                    doc.setFontSize(12);
+
+                    // Barra de totales (azul)
+                    doc.setFillColor(47, 132, 212);
+                    doc.rect(x, chartY - totalHeight, barWidth/2, totalHeight, 'F');
+                    doc.text(total.toString(), x + 2, chartY - totalHeight - 2);
+
+                    // Barra de pendientes (rojo)
+                    doc.setFillColor(255, 99, 71);
+                    doc.rect(x + barWidth/2, chartY - pendHeight, barWidth/2, pendHeight, 'F');
+                    doc.text(pend.toString(), x + barWidth/2 + 4, chartY - pendHeight - 2);
+
+                    // Punto para línea de finalizadas
+                    puntosLinea.push({ x: x + barWidth/2, y: chartY - finHeight });
+
+                    // Etiqueta del departamento (código corto)
+                    doc.setFontSize(16);
+                    doc.text(code, x + barWidth/2 - 2, chartY + 8);
+
+                    x += barWidth + spacing;
+                });
+
+                // Dibujar línea de tendencia (finalizadas)
+                doc.setDrawColor(47, 212, 52);
+                doc.setLineWidth(1);
+                for (let i = 0; i < puntosLinea.length - 1; i++) {
+                    doc.line(puntosLinea[i].x, puntosLinea[i].y, puntosLinea[i+1].x, puntosLinea[i+1].y);
+                }
+                puntosLinea.forEach(p => {
+                    doc.setFillColor(47, 212, 52);
+                    doc.circle(p.x, p.y, 1, 'F');
+                });
+
+                // Leyenda
+                const legendY = chartY + 15;
+
+                doc.setFontSize(10);
+
+                doc.setTextColor(47, 132, 212);
+                doc.text('Totales', chartX, legendY);
+
+                doc.setTextColor(255,99,71);
+                doc.text('Pendientes', chartX + 20, legendY);
+
+                doc.setTextColor(47, 212, 52);
+                doc.text('Finalizadas', chartX + 45, legendY);
+
+                doc.save(`reporte_${periodoActual?.nombre?.replace(/ /g, '_') || 'periodo'}.pdf`);
+                cerrarModal();
+            }
 
             // Iniciar
             fetchData();
