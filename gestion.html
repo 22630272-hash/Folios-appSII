@@ -905,7 +905,8 @@
                     }
                 });
 
-                const tituloY = doc.lastAutoTable.finalY + 20;
+                doc.addPage();
+                const tituloY = 30;
                 doc.setFontSize(18);
                 doc.text('Gráfica de tareas por departamento', pageWidth / 2, tituloY, { align: 'center' });
 
